@@ -8,4 +8,6 @@ import android.view.View;
 public class ViewHolder {
 
     public View itemView;
+
+    public int currentPosition;
 }

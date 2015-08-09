@@ -5,7 +5,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.Arrays;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,7 +21,6 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
     private int layout;
     private Class<T> mHolderClass;
     private List<E> mList;
-    private E[] mArray;
 
     public EasyRecyclerAdapter(List<E> mList, int layout, Class<T> mHolderClass) {
         this.layout = layout;
@@ -30,8 +30,23 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
 
     public EasyRecyclerAdapter(E[] mArray, int layout, Class<T> mHolderClass) {
         this.layout = layout;
-        this.mArray = mArray;
+        this.mList = arrayToList(mArray);
         this.mHolderClass = mHolderClass;
+    }
+
+    private List<E> arrayToList(E[] mArray){
+        int length = mArray.length;
+        List<E> mList = new ArrayList<>();
+        for(int i=0;i<length;i++){
+            mList.add(mArray[i]);
+        }
+        return mList;
+    }
+
+    private E[] listToArray(List<E> mList){
+        int length = mList.size();
+        E[] mNewArray = (E[]) Array.newInstance(mList.getClass().getComponentType(), length);
+        return mNewArray;
     }
 
     public void updateDataSet(List<E> mList) {
@@ -40,23 +55,22 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
     }
 
     public void updateDataSet(E[] mArray) {
-        this.mArray = mArray;
+        this.mList = arrayToList(mArray);
         this.notifyDataSetChanged();
     }
 
     public void addData(List<E> mList) {
         this.mList.addAll(mList);
-        this.notifyItemRangeInserted(this.mList.size()-1,mList.size());
+        this.notifyItemRangeInserted(this.mList.size() - 1, mList.size());
     }
 
     public void addData(E[] mArray) {
-        int newLength = this.mArray.length + mArray.length;
-        E[] mNewArray = Arrays.copyOf(this.mArray, newLength);
-        for (int i = this.mArray.length; i < newLength; i++) {
-            mNewArray[i] = mArray[i - this.mArray.length];
+        int listSize = this.mList.size();
+        int length = mArray.length;
+        for(int i=0;i<length;i++){
+            this.mList.add(mArray[i]);
         }
-        this.mArray = mNewArray;
-        this.notifyItemRangeInserted(this.mArray.length,mArray.length);
+        this.notifyItemRangeInserted(listSize, mArray.length);
     }
 
     public void addData(E mItem) {
@@ -67,14 +81,30 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
             this.mList.add(mItem);
             insertPosition = mList.size() - 1;
         }
-
-        if (!EmptyUtils.emptyOfArray(this.mArray)) {
-            this.mArray = Arrays.copyOf(this.mArray, this.mArray.length + 1);
-            this.mArray[this.mArray.length - 1] = mItem;
-            insertPosition = this.mArray.length - 1;
-        }
-
         this.notifyItemInserted(insertPosition);
+    }
+
+    public E[] getArrayDataSet() {
+        return listToArray(mList);
+    }
+
+    public List<E> getListDataSet() {
+        return mList;
+    }
+
+    public void removeData(E mItem){
+        if(!EmptyUtils.emptyOfList(mList)){
+            this.mList.remove(mItem);
+        }
+        this.notifyDataSetChanged();
+    }
+
+    public void removeData(int position){
+
+        if(!EmptyUtils.emptyOfList(mList)){
+            mList.remove(position);
+        }
+        this.notifyDataSetChanged();
     }
 
     @Override
@@ -82,9 +112,7 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
 
         if (!EmptyUtils.emptyOfList(this.mList)) {
             return this.mList.size();
-        } else if (!EmptyUtils.emptyOfArray(this.mArray)) {
-            return this.mArray.length;
-        } else {
+        }else {
             return 0;
         }
     }
@@ -93,9 +121,7 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
 
         if (!EmptyUtils.emptyOfList(this.mList)) {
             return this.mList.get(position);
-        } else if (!EmptyUtils.emptyOfArray(this.mArray)) {
-            return this.mArray[position];
-        } else {
+        }else {
             return null;
         }
     }
@@ -109,12 +135,12 @@ public abstract class EasyRecyclerAdapter<E, T extends ViewHolder> extends Recyc
     @Override
     public void onBindViewHolder(RecyclerViewBaseHolder<T> holder, int position) {
         holder.base.itemView = holder.itemView;
+        holder.base.currentPosition = position;
         onBindData(position, holder.base, getItem(position));
     }
 
     /**
      * 数据绑定
-     *
      * @param position
      * @param holder
      * @param mItem

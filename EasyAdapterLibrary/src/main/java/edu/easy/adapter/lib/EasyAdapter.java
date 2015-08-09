@@ -4,7 +4,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
-import java.util.Arrays;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,7 +20,6 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
     private int layout;
     private Class<T> mHolderClass;
     private List<E> mList;
-    private E[] mArray;
 
     public EasyAdapter(List<E> mList, int layout, Class<T> mHolderClass) {
         this.layout = layout;
@@ -29,8 +29,23 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
 
     public EasyAdapter(E[] mArray, int layout, Class<T> mHolderClass) {
         this.layout = layout;
-        this.mArray = mArray;
+        this.mList = arrayToList(mArray);
         this.mHolderClass = mHolderClass;
+    }
+
+    private List<E> arrayToList(E[] mArray){
+        int length = mArray.length;
+        List<E> mList = new ArrayList<>();
+        for(int i=0;i<length;i++){
+            mList.add(mArray[i]);
+        }
+        return mList;
+    }
+
+    private E[] listToArray(List<E> mList){
+        int length = mList.size();
+        E[] mNewArray = (E[])Array.newInstance(mList.getClass().getComponentType(),length);
+        return mNewArray;
     }
 
     private EasyAdapter() {
@@ -42,7 +57,22 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
     }
 
     public void updateDataSet(E[] mArray) {
-        this.mArray = mArray;
+        this.mList = arrayToList(mArray);
+        this.notifyDataSetChanged();
+    }
+
+    public void removeData(E mItem){
+        if(!EmptyUtils.emptyOfList(mList)){
+            this.mList.remove(mItem);
+        }
+        this.notifyDataSetChanged();
+    }
+
+    public void removeData(int position){
+
+        if(!EmptyUtils.emptyOfList(mList)){
+            mList.remove(position);
+        }
         this.notifyDataSetChanged();
     }
 
@@ -52,12 +82,10 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
     }
 
     public void addData(E[] mArray) {
-        int newLength = this.mArray.length + mArray.length;
-        E[] mNewArray = Arrays.copyOf(this.mArray, newLength);
-        for (int i = this.mArray.length; i < newLength; i++) {
-            mNewArray[i] = mArray[i - this.mArray.length];
+        int length = mArray.length;
+        for(int i=0;i<length;i++){
+            this.mList.add(mArray[i]);
         }
-        this.mArray = mNewArray;
         this.notifyDataSetChanged();
     }
 
@@ -66,16 +94,11 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
         if (!EmptyUtils.emptyOfList(this.mList)) {
             this.mList.add(mItem);
         }
-
-        if (!EmptyUtils.emptyOfArray(this.mArray)) {
-            this.mArray = Arrays.copyOf(this.mArray, this.mArray.length + 1);
-            this.mArray[this.mArray.length - 1] = mItem;
-        }
         this.notifyDataSetChanged();
     }
 
     public E[] getArrayDataSet() {
-        return mArray;
+        return listToArray(mList);
     }
 
     public List<E> getListDataSet() {
@@ -87,9 +110,6 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
 
         if (!EmptyUtils.emptyOfList(this.mList)) {
             return this.mList.size();
-        }
-        else if (!EmptyUtils.emptyOfArray(this.mArray)) {
-            return this.mArray.length;
         }else {
             return 0;
         }
@@ -100,8 +120,6 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
 
         if (!EmptyUtils.emptyOfList(this.mList)) {
             return this.mList.get(position);
-        }else if (!EmptyUtils.emptyOfArray(this.mArray)) {
-            return this.mArray[position];
         }else {
             return null;
         }
@@ -117,6 +135,7 @@ public abstract class EasyAdapter<E, T extends ViewHolder> extends BaseAdapter {
         convertView = ViewHolderUtils.loadingConvertView(parent.getContext(), convertView, layout, mHolderClass);
         T mHolder = (T) convertView.getTag();
         mHolder.itemView = convertView;
+        mHolder.currentPosition = position;
         onBindData(position, mHolder, getItem(position));
         return convertView;
     }

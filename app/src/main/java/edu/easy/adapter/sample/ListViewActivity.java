@@ -2,6 +2,7 @@ package edu.easy.adapter.sample;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
@@ -16,6 +17,9 @@ public class ListViewActivity extends AppCompatActivity implements View.OnClickL
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listview);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("EasyAdapter");
 
         ListView mListView = (ListView) findViewById(R.id.lv_base);
         mAdapter = new ListViewAdapter(getResources().getStringArray(R.array.TestDatas));
@@ -38,5 +42,16 @@ public class ListViewActivity extends AppCompatActivity implements View.OnClickL
                 mAdapter.addData(getResources().getStringArray(R.array.TestDatas));
                 break;
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if(item.getItemId()==android.R.id.home){
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }

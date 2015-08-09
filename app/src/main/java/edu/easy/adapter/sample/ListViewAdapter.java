@@ -1,5 +1,8 @@
 package edu.easy.adapter.sample;
 
+import android.view.View;
+import android.widget.Toast;
+
 import java.util.List;
 
 import edu.easy.adapter.lib.EasyAdapter;
@@ -18,7 +21,21 @@ public class ListViewAdapter extends EasyAdapter<String,MyViewHolder> {
     }
 
     @Override
-    public void onBindData(int position,MyViewHolder mViewHolder, String mItem) {
+    public void onBindData(int position,final MyViewHolder mViewHolder, String mItem) {
         mViewHolder.tv_content.setText(mItem);
+        mViewHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                removeData(mViewHolder.currentPosition);
+                return false;
+            }
+        });
+
+        mViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(v.getContext(),String.valueOf(mViewHolder.currentPosition),Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
